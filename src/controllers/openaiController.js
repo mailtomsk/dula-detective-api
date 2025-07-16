@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
-import { success, error } from '../utils/apiResponse.js';
+import { success, error, openaiError } from '../utils/apiResponse.js';
+import { extractTextFromImage, parseNutritionLabel } from '../utils/ocrUtils.js';
+import { SYSTEM_PROMPT, buildMainAnalysisPrompt } from '../utils/foodPrompts.js';
 
 dotenv.config();
 
@@ -26,65 +28,39 @@ export async function vision(req, res) {
       return error(res, "Valid image file is required.", 400);
     }
 
-    const analysisType  = `You are a food analysing expert, based on this pack details, provide me overall assessment, including how safe, how cautious and how dangerous. Rank me the cautious out of 10. Include the list of safe ingredients, and their safe percentage. Include caution required. Provide some very useful insights for this product 
-      Return the response as a JSON object with this structure (ensure there are NO trailing commas or extra characters — it must be valid JSON only and Return ONLY a valid JSON object, wrapped inside triple backticks like \`\`\`json ... \`\`\`. Do not add any explanations or comments.):
-      "data": {        
-      "overallStatus": number,
-      "confidence": number,
-      "processingTime": number,
-      "ingredients": [
-        {
-          "name": string,
-          "status": string,
-          "percentage": string,
-          "confidence": number,
-          "reason": string,
-          "details": string,
-          "nutritionalInfo": {
-            "calories": number,
-            "protein": number,
-            "carbs": number,
-            "fiber": number
-          }
-        },
-        {
-          "name": string,
-          "status": string,
-          "percentage": number,
-          "confidence": number,
-          "reason": string,
-          "details": string,
-          "warnings": [string]
-        }
-      ],
-      "summary": {
-        "safeCount": number,
-        "cautionCount": number,
-        "dangerousCount": number,
-        "totalIngredients": number
-      },
-      "recommendations": [
-        string
-      ],
-      "allergens": [string],
-    }`;
+    const { analysisType } = req.body;
+
+    if (!analysisType || (analysisType !== 'human' && analysisType !== 'pet')) {
+      return error(res, "Valid 'analysisType' is required. It must be either 'human' or 'pet'.", 400);
+    }    
+
+    // OCR
+    const ocrText = await extractTextFromImage(req.file.buffer);
+
+    // Parse fields
+    const { productName, ingredientsList, nutritionFacts } = parseNutritionLabel(ocrText);
+
+    // Build user prompt
+    const mainPrompt = buildMainAnalysisPrompt({
+      productName: productName || "Unknown Product",
+      analysisType: analysisType || "human",
+      ingredientsList: ingredientsList || "Not provided",
+      nutritionFacts: nutritionFacts || "Not provided"
+    });
+
     const base64Image = req.file.buffer.toString('base64');
     const imageMimeType = req.file.mimetype;
+    const dataUrl = `data:${imageMimeType};base64,${base64Image}`;
 
-    const dataUrl = `data:${imageMimeType};base64,${base64Image}`;  
-
-    // OpenAI Vision API call
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
+        { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
           content: [
-            { type: "text", text: analysisType },
-            {
-              type: "image_url",
-              image_url: { url: dataUrl }
-            }
+            { type: "text", text: mainPrompt },
+            { type: "image_url", image_url: { url: dataUrl } }
           ]
         }
       ]
@@ -92,31 +68,53 @@ export async function vision(req, res) {
 
     const result = response.choices?.[0]?.message?.content?.trim();
     if (!result) {
-      return error(res, "Empty response from OpenAI. Try again or with a different image.", 502);
+      return openaiError(res, { code: "OPENAI_EMPTY_RESPONSE", message: "Empty response from OpenAI. Try again or with a different image." }, 502);
     }
 
-    // Attempt to extract JSON
+    // Parse result JSON
     let cleanedResponse;
-    try {      
+    try {
       const match = result.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
       const jsonStr = match ? match[1] : result;
       cleanedResponse = JSON.parse(jsonStr);
     } catch (parseErr) {
-      //If OpenAI responded with "I'm unable..."
+      // Check if OpenAI indicated it couldn't analyze
       if (/i'm unable|i cannot|not able|could not|can't/i.test(result)) {
-        return error(
+        return openaiError(
           res,
-          "OpenAI was unable to analyze the image. Please upload a clearer image of a food label or product.",
+          { code: "OPENAI_CANNOT_ANALYZE", message: "OpenAI was unable to analyze the image. Please upload a clearer image of a food label or product." },
           400
         );
       }
-      // Default parse error
-      return error(res, "Failed to parse JSON from OpenAI", 502, parseErr.message);
+      return openaiError(res, { code: "OPENAI_INVALID_JSON", message: "Failed to parse JSON from OpenAI" }, 502, { details: parseErr.message });
     }
 
     const outputData = cleanedResponse.data ? cleanedResponse.data : cleanedResponse;
+
+    // If OpenAI response has success: false, treat as API error
+    if (outputData.success === false) {
+      return openaiError(
+        res,
+        {
+          code: outputData.error?.code || "ANALYSIS_FAILED",
+          message: outputData.error?.message || "Analysis failed"
+        },
+        400,
+        {
+          ...(outputData.error?.details && { details: outputData.error.details }),
+          ...(outputData.partialResults && { partialResults: outputData.partialResults }),
+          ...(outputData.retryInstructions && { retryInstructions: outputData.retryInstructions })
+        }
+      );
+    }
+
     return success(res, outputData, "Analysis completed successfully");
-  } catch (e) {   
-    return error(res, e?.error?.message || e.message || "Server Error", e.statusCode || 500, e.stack);       
+  } catch (e) {
+    return openaiError(
+      res,
+      { code: "SERVER_ERROR", message: e?.error?.message || e.message || "Server Error" },
+      e.statusCode || 500,
+      { details: e.stack }
+    );
   }
 }
