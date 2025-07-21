@@ -8,16 +8,21 @@ datasource db {
 }
 
 model User {
-  id             Int      @id @default(autoincrement())
-  name           String
-  email          String   @unique
-  password       String
-  emailVerified  Boolean  @default(false)
-  plan           String   @default("free")
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  id                     Int       @id @default(autoincrement())
+  name                   String
+  email                  String    @unique
+  password               String
+  emailVerified          Boolean   @default(false)
+  plan                   String    @default("free")
+  profile_image          String?
+  notifications          Boolean   @default(true)
+  dark_mode              Boolean   @default(false)
+  default_analysis_type  String    @default("human")
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @updatedAt
 
   passwordResetToken PasswordResetToken?
+  scanAnalyses   ScanAnalysis[]
 }
 
 model PasswordResetToken {
@@ -28,5 +33,50 @@ model PasswordResetToken {
   expires_at    DateTime
   created_at    DateTime   @default(now())
 }
+
+model ScanHistory {
+  id               Int       @id @default(autoincrement())
+  user_id          Int?      // nullable if anonymous
+  image_path       String
+  analysis_type    String    // 'human' | 'pet'
+  created_at       DateTime  @default(now())
+}
+
+model ScanAnalysis {
+  id               Int         @id @default(autoincrement())
+  analysis_id      String?     @unique
+  user_id          Int?       
+  user             User?       @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  analysis_type    String
+  product_name     String  
+  overall_status   String
+  confidence       Float
+  processing_time  Float
+  ingredients      Json       // array of ingredients (as JSON)
+  summary          Json       // object with safeCount, cautionCount, etc.
+  recommendations  String[]   // array of strings
+  allergens        String[]   // array of allergens
+  image_url        String
+  created_at       DateTime   @default(now())
+}
+
+model InsightArticle {
+  id            Int         @id @default(autoincrement())
+  article_id    String      @unique
+  title         String
+  description   String?
+  content       String?
+  category      String   // "safety" | "education" | "pet-safety" | "tips"
+  read_time     Int
+  image_path    String?
+  published_at  DateTime
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  trending      Boolean    @default(false)
+  author_name   String?
+  author_bio    String?
+  tags          String[] // optional tags
+}
+
 
 

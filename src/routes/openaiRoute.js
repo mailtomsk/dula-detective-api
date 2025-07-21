@@ -1,11 +1,15 @@
 import express from 'express';
 import multer from 'multer';
-import * as openaiController from '../controllers/openaiController.js';
+import authMiddleware from '../middlewares/authMiddleware.js';
+import {ask, vision, getAnalysisHistory, getAnalysisDetails, deleteAnalysis } from '../controllers/openaiController.js';
 
 const router = express.Router();
 const upload = multer();
 
-router.post('/ask', openaiController.ask);
-router.post('/scan', upload.single('file'), openaiController.vision);
+router.post('/ask', ask);
+router.post('/scan', upload.single('file'), authMiddleware, vision);
+router.get('/history', authMiddleware, getAnalysisHistory);
+router.get('/:id', authMiddleware, getAnalysisDetails);
+router.delete('/:id', authMiddleware, deleteAnalysis);
 
 export default router;
