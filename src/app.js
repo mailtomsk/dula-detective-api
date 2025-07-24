@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use('/uploads', express.static('public/uploads'));
 
-app.use('/api/analysis', openaiRoute);
+app.use('/api/analysis', basicAuth, openaiRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/user', userRoute);
 app.use('/api/insights', insightRoute);
