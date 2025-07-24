@@ -19,10 +19,12 @@ model User {
   dark_mode              Boolean   @default(false)
   default_analysis_type  String    @default("human")
   created_at             DateTime  @default(now())
-  updated_at             DateTime  @updatedAt
+  updated_at             DateTime?  @updatedAt
 
   passwordResetToken PasswordResetToken?
   scanAnalyses   ScanAnalysis[]
+  Notifications  Notification[]
+  
 }
 
 model PasswordResetToken {
@@ -32,6 +34,7 @@ model PasswordResetToken {
   token         String
   expires_at    DateTime
   created_at    DateTime   @default(now())
+  updated_at    DateTime?  @updatedAt
 }
 
 model ScanHistory {
@@ -40,6 +43,7 @@ model ScanHistory {
   image_path       String
   analysis_type    String    // 'human' | 'pet'
   created_at       DateTime  @default(now())
+  updated_at       DateTime?  @updatedAt
 }
 
 model ScanAnalysis {
@@ -58,6 +62,7 @@ model ScanAnalysis {
   allergens        String[]   // array of allergens
   image_url        String
   created_at       DateTime   @default(now())
+  updated_at       DateTime?   @updatedAt
 }
 
 model InsightArticle {
@@ -71,11 +76,24 @@ model InsightArticle {
   image_path    String?
   published_at  DateTime
   created_at    DateTime   @default(now())
-  updated_at    DateTime   @updatedAt
+  updated_at    DateTime?  @updatedAt
   trending      Boolean    @default(false)
   author_name   String?
   author_bio    String?
   tags          String[] // optional tags
+}
+
+model Notification {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?       
+  user       User?     @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  type       String
+  title      String
+  message    String
+  data       Json?
+  read       Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
 }
 
 

@@ -31,6 +31,7 @@ export async function ask(req, res) {
 
 export async function vision(req, res) {
   try {
+    console.log(req.file);
     if (!req.file || !req.file.mimetype.startsWith('image/')) {
       return error(res, "Valid image file is required.", 400);
     }
@@ -160,7 +161,7 @@ export async function vision(req, res) {
         summary: outputData.summary,
         recommendations: outputData.recommendations,
         allergens: outputData.allergens,
-        created_at: new Date(outputData.createdAt || Date.now())
+        created_at: new Date(Date.now())
       }
     });
 

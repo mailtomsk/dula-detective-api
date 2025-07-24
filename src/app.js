@@ -3,9 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoute from './routes/authRoute.js';
 import userRoute from './routes/userRoute.js';
-import insightRoute from './routes/insightRoute.js';
+import statsRoute from './routes/statsRoute.js';
 import openaiRoute from './routes/openaiRoute.js';
+import insightRoute from './routes/insightRoute.js';
 import basicAuth from './middlewares/basicAuth.js';
+import notificationRoute from './routes/notificationRoute.js';
 
 dotenv.config();
 
@@ -28,6 +30,8 @@ app.use('/api/analysis', openaiRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/user', userRoute);
 app.use('/api/insights', insightRoute);
+app.use('/api/stats', statsRoute);
+app.use('/api/notifications', notificationRoute);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
