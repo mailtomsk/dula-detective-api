@@ -31,7 +31,7 @@ export async function ask(req, res) {
 
 export async function vision(req, res) {
   try {
-    console.log(req);
+    console.log("analysis", req); 
     if (!req.file || !req.file.mimetype.startsWith('image/')) {
       return error(res, "Valid image file is required.", 400);
     }
