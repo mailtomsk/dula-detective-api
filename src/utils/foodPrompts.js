@@ -18,7 +18,7 @@ Always base your analysis on:
 Provide responses in structured JSON format as specified in the user prompt.
 `;
 
-export function buildMainAnalysisPrompt({ productName, analysisType, ingredientsList, nutritionFacts }) {
+export function buildMainAnalysisPrompt({ productName, analysisType }) {
   return `
   Analyze the  uploaded Image of a food Product for ${analysisType} consumption safety.
 

@@ -31,7 +31,6 @@ export async function ask(req, res) {
 
 export async function vision(req, res) {
   try {
-    
     console.log("Uploaded file:", req.file);
     console.log("Original filename:", req.file.originalname);
     console.log("MIME type:", req.file.mimetype);
@@ -75,17 +74,17 @@ export async function vision(req, res) {
     });
 
     // OCR
-    const ocrText = await extractTextFromImage(req.file.buffer);
+    // const ocrText = await extractTextFromImage(req.file.buffer);
 
     // Parse fields
-    const { productName, ingredientsList, nutritionFacts } = parseNutritionLabel(ocrText);
+    // const { productName } = parseNutritionLabel(ocrText);
+    const productName = "Unknown Product";
+
 
     // Build user prompt
     const mainPrompt = buildMainAnalysisPrompt({
       productName: productName || "Unknown Product",
-      analysisType: analysisType || "human",
-      ingredientsList: ingredientsList || "Not provided",
-      nutritionFacts: nutritionFacts || "Not provided"
+      analysisType: analysisType || "human"
     });
 
     const base64Image = req.file.buffer.toString('base64');
