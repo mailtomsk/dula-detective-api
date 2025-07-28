@@ -31,9 +31,8 @@ export async function ask(req, res) {
 
 export async function vision(req, res) {
   try {
+    console.log("Request:", req);
     console.log("Uploaded file:", req.file);
-    console.log("Original filename:", req.file.originalname);
-    console.log("MIME type:", req.file.mimetype);
   
     if (!req.file || !req.file.mimetype.startsWith('image/')) {
       return error(res, "Valid image file is required.", 400);
