@@ -31,7 +31,7 @@ export async function ask(req, res) {
 
 export async function vision(req, res) {
   try {
-    // console.log("Request:", req);
+    console.log("Request headers:", req.headers);
     console.log("Uploaded file:", req.file);
   
     if (!req.file || !req.file.mimetype.startsWith('image/')) {
