@@ -172,6 +172,12 @@ export async function vision(req, res) {
 
     return success(res, outputData, "Analysis completed successfully");
   } catch (e) {
+    console.log("Uploaded file from catch:", req.file);
+    console.log("Original filename  from catch:", req.file.originalname);
+    console.log("MIME type  from catch:", req.file.mimetype);
+    console.log("File size (bytes)  from catch:", req.file.size);
+    console.log("Response from catch error:", e);
+    console.log("Response from catch:", res);
     return openaiError(
       res,
       { code: "SERVER_ERROR", message: e?.error?.message || e.message || "Server Error" },
