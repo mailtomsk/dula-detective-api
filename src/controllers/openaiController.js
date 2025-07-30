@@ -44,35 +44,20 @@ export async function vision(req, res) {
       return error(res, "Valid 'analysisType' is required. It must be either 'human' or 'pet'.", 400);
     }    
 
-    //Save File to Storage
-    const uploadType = 'scan';
-    const timestamp = Date.now();
-    const ext = req.file.originalname.split('.').pop();
-    const filename = `${uploadType}_${timestamp}.${ext}`;
-    const uploadDir = path.join(`./public/uploads/${uploadType}`);
-    const filePath = path.join(uploadDir, filename);
+    const filePath = req.file.path;
+    const filename = path.basename(filePath);
+    const storedImageUrl = `${process.env.BACKEND_URL}/uploads/scan/${filename}`;
 
-    // Ensure uploads directory exists
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    // Save the file to disk
-    fs.writeFileSync(filePath, req.file.buffer);
-
-    const storedFilename = filename;
-
-    // Save to ScanHistory if needed
+    // Save to ScanHistory
     await prisma.scanHistory.create({
       data: {
         user_id: req.user?.userId || null,
-        image_path: storedFilename,
-        analysis_type :analysisType
+        image_path: filename,
+        analysis_type: analysisType
       }
     });
 
     const productName = "Unknown Product";
-
 
     // Build user prompt
     const mainPrompt = buildMainAnalysisPrompt({
@@ -80,9 +65,8 @@ export async function vision(req, res) {
       analysisType: analysisType || "human"
     });
 
-    const base64Image = req.file.buffer.toString('base64');
-    const imageMimeType = req.file.mimetype;
-    const dataUrl = `data:${imageMimeType};base64,${base64Image}`;
+    const base64Image = fs.readFileSync(filePath).toString('base64');
+    const dataUrl = `data:${req.file.mimetype};base64,${base64Image}`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -148,7 +132,7 @@ export async function vision(req, res) {
       data: {
         analysis_id: analysisId,
         user_id: req.user?.userId || null,
-        image_url: storedFilename,
+        image_url: filename,
         product_name: outputData.productName,
         analysis_type: outputData.analysisType,
         overall_status: outputData.overallStatus,
