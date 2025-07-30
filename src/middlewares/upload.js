@@ -19,14 +19,37 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { 
+    fileSize: 10 * 1024 * 1024,
+    fieldSize: 10 * 1024 * 1024,
+    fieldNameSize: 100, 
+    files: 1, 
+    parts: 10,
+    headerPairs: 2000,
+  },
   fileFilter: (req, file, cb) => {
     if (file.mimetype && file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
       cb(new Error('Only image files are allowed'), false);
     }
-  }
+  },
+  preservePath: false,
 });
+
+export const handleMulterError = (error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    return res.status(400).json({ 
+      error: 'File upload error', 
+      details: error.message 
+    });
+  } else if (error) {
+    return res.status(400).json({ 
+      error: 'Upload failed', 
+      details: error.message 
+    });
+  }
+  next();
+};
 
 export default upload;
