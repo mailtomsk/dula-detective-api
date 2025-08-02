@@ -18,8 +18,10 @@ model User {
   notifications          Boolean   @default(true)
   dark_mode              Boolean   @default(false)
   default_analysis_type  String    @default("human")
+  is_active              Boolean   @default(true)
+  last_Login             DateTime? 
   created_at             DateTime  @default(now())
-  updated_at             DateTime?  @updatedAt
+  updated_at             DateTime? @updatedAt
 
   passwordResetToken PasswordResetToken?
   scanAnalyses   ScanAnalysis[]

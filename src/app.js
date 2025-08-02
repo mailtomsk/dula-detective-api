@@ -8,6 +8,7 @@ import openaiRoute from './routes/openaiRoute.js';
 import insightRoute from './routes/insightRoute.js';
 import basicAuth from './middlewares/basicAuth.js';
 import adminAuthRoute from './routes/admin/adminAuthRoute.js';
+import adminUserRoute from './routes/admin/adminUserRoute.js';
 import notificationRoute from './routes/notificationRoute.js';
 
 dotenv.config();
@@ -36,6 +37,7 @@ app.use('/api/notifications', notificationRoute);
 
 //Frontend admin
 app.use('/api/admin/auth', adminAuthRoute);
+app.use('/api/admin/users', adminUserRoute);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
