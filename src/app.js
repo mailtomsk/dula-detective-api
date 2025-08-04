@@ -10,6 +10,7 @@ import basicAuth from './middlewares/basicAuth.js';
 import adminAuthRoute from './routes/admin/adminAuthRoute.js';
 import adminUserRoute from './routes/admin/adminUserRoute.js';
 import notificationRoute from './routes/notificationRoute.js';
+import adminDashboardRoute from './routes/admin/adminDashboardRoute.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/notifications', notificationRoute);
 //Frontend admin
 app.use('/api/admin/auth', adminAuthRoute);
 app.use('/api/admin/users', adminUserRoute);
+app.use('/api/admin/dashboard', adminDashboardRoute);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

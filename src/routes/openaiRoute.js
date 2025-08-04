@@ -7,7 +7,7 @@ import {ask, vision, getAnalysisHistory, getAnalysisDetails, deleteAnalysis } fr
 const router = express.Router();
 
 router.post('/ask', ask);
-router.post('/scan', upload.single('file'), handleMulterError, vision);
+router.post('/scan', authMiddleware, upload.single('file'), handleMulterError, vision);
 router.get('/history', authMiddleware, getAnalysisHistory);
 router.get('/:id', authMiddleware, getAnalysisDetails);
 router.delete('/:id', authMiddleware, deleteAnalysis);
