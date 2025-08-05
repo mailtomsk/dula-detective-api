@@ -12,4 +12,6 @@ router.get('/history', authMiddleware, getAnalysisHistory);
 router.get('/:id', authMiddleware, getAnalysisDetails);
 router.delete('/:id', authMiddleware, deleteAnalysis);
 
+router.get('/barcode', authMiddleware, getAnalysisHistory);
+
 export default router;

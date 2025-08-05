@@ -19,14 +19,14 @@ model User {
   dark_mode              Boolean   @default(false)
   default_analysis_type  String    @default("human")
   is_active              Boolean   @default(true)
-  last_Login             DateTime? 
+  last_Login             DateTime?
   created_at             DateTime  @default(now())
   updated_at             DateTime? @updatedAt
 
   passwordResetToken PasswordResetToken?
   scanAnalyses   ScanAnalysis[]
   Notifications  Notification[]
-  
+
 }
 
 model PasswordResetToken {
@@ -42,7 +42,8 @@ model PasswordResetToken {
 model ScanHistory {
   id               Int       @id @default(autoincrement())
   user_id          Int?      // nullable if anonymous
-  image_path       String
+  image_path       String?
+  barcode          String?
   analysis_type    String    // 'human' | 'pet'
   created_at       DateTime  @default(now())
   updated_at       DateTime?  @updatedAt
@@ -51,10 +52,11 @@ model ScanHistory {
 model ScanAnalysis {
   id               Int         @id @default(autoincrement())
   analysis_id      String?     @unique
-  user_id          Int?       
+  user_id          Int?
+  barcode          String?
   user             User?       @relation(fields: [user_id], references: [id], onDelete: SetNull)
   analysis_type    String
-  product_name     String  
+  product_name     String
   overall_status   String
   confidence       Float
   processing_time  Float
@@ -62,9 +64,9 @@ model ScanAnalysis {
   summary          Json       // object with safeCount, cautionCount, etc.
   recommendations  String[]   // array of strings
   allergens        String[]   // array of allergens
-  image_url        String
+  image_url        String?
   created_at       DateTime   @default(now())
-  updated_at       DateTime?   @updatedAt
+  updated_at       DateTime?  @updatedAt
 }
 
 model InsightArticle {
@@ -87,7 +89,7 @@ model InsightArticle {
 
 model Notification {
   id         Int       @id @default(autoincrement())
-  user_id    Int?       
+  user_id    Int?
   user       User?     @relation(fields: [user_id], references: [id], onDelete: SetNull)
   type       String
   title      String
@@ -101,7 +103,7 @@ model Notification {
 model Admin {
   id              Int       @id @default(autoincrement())
   username        String
-  email           String    @unique  
+  email           String    @unique
   password        String
   remember_token  String?
   created_at      DateTime  @default(now())
@@ -134,6 +136,20 @@ model SystemSetting {
   apiRateLimit         Int       @default(1000)
   dataRetentionDays    Int       @default(90)
   backupFrequency      String    @default("Daily")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+
+model BarcodeDetails {
+  id                   Int       @id @default(autoincrement())
+  barcode              String    @unique
+  productName          String?
+  brand                String?
+  image_url            String?
+  ingredients          String?   @db.Text
+  nutrition            String?   @db.Text
+  aiResponse           Json?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 }

@@ -33,7 +33,7 @@ export async function vision(req, res) {
   try {
     console.log("Request headers:", req.headers);
     console.log("Uploaded file:", req.file);
-  
+
     if (!req.file || !req.file.mimetype.startsWith('image/')) {
       return error(res, "Valid image file is required.", 400);
     }
@@ -42,7 +42,7 @@ export async function vision(req, res) {
 
     if (!analysisType || (analysisType !== 'human' && analysisType !== 'pet')) {
       return error(res, "Valid 'analysisType' is required. It must be either 'human' or 'pet'.", 400);
-    }    
+    }
 
     const filePath = req.file.path;
     const filename = path.basename(filePath);

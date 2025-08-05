@@ -12,6 +12,7 @@ import adminUserRoute from './routes/admin/adminUserRoute.js';
 import notificationRoute from './routes/notificationRoute.js';
 import adminSettingsRoute from './routes/admin/adminSettingsRoute.js';
 import adminDashboardRoute from './routes/admin/adminDashboardRoute.js';
+import FoodAnalysisRoute from './routes/FoodAnalysisRoute.js';
 
 dotenv.config();
 
@@ -36,6 +37,8 @@ app.use('/api/user', userRoute);
 app.use('/api/insights', insightRoute);
 app.use('/api/stats', statsRoute);
 app.use('/api/notifications', notificationRoute);
+
+app.use('/api/food-analysis', FoodAnalysisRoute);
 
 //Frontend admin
 app.use('/api/admin/auth', adminAuthRoute);
