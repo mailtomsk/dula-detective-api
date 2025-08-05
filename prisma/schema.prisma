@@ -108,4 +108,33 @@ model Admin {
   updated_at      DateTime? @updatedAt
 }
 
+model Setting {
+  id              Int      @id @default(autoincrement())
+  appName         String
+  description     String // rename
+  contactEmail    String
+  contactPhone    String
+  logoUrl         String?
+  timezone        String   @default("UTC")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model NotificationSetting {
+  id                   Int      @id @default(autoincrement())
+  emailNotifications   Boolean @default(true)
+  adminNotifications   Boolean @default(true)
+  alertThreshold       Int      @default(10)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model SystemSetting {
+  id                   Int       @id @default(autoincrement())
+  apiRateLimit         Int       @default(1000)
+  dataRetentionDays    Int       @default(90)
+  backupFrequency      String    @default("Daily")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
 
