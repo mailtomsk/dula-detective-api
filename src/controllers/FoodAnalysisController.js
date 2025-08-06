@@ -11,6 +11,28 @@ const prisma = new PrismaClient();
 
 export class FoodAnalysisContoller {
 
+    static async barcodeInfo(req, res) {
+         const { barcode } = req.body;
+         if (!barcode) {
+             return error(res, "Enter valid barcode.", 422);
+         }
+        const barcodeInfo = await BarcodeService.fetchdetails(barcode);
+        const barcode_details = barcodeInfo.data || false;
+        if (!barcode_details) {
+            return error(res, "Barcode is not valid or no data found for the barcode", 422);
+        }
+
+        const product = {
+            'barcode':barcode,
+            'name': barcode_details.name,
+            'brand': barcode_details.brand,
+            'image_url': barcode_details.image_url,
+        }
+        return success(res, product, "Barcode Information");
+
+
+    }
+
     static async barcodeAnalysis(req, res) {
         try {
             const { barcode, analysisType } = req.body;
@@ -33,7 +55,7 @@ export class FoodAnalysisContoller {
 
             const barcodeInfo = await BarcodeService.fetchdetails(barcode);
 
-            const barcode_details = barcodeInfo.data || [];
+            const barcode_details = barcodeInfo.data || false;
             if (!barcode_details) {
                 return error(res, "Barcode is not valid or no data found for the barcode", 422);
             }
@@ -43,6 +65,7 @@ export class FoodAnalysisContoller {
                 ai_reponse = JSON.parse(ai_reponse);
                if (ai_reponse.success != false) {
                   ai_reponse.analysisId = crypto.randomUUID();
+                  ai_reponse.productImage = barcode_details.image_url ?? null;
                   await FoodAnalysisContoller.createScanAnalysis(ai_reponse.analysisId,ai_reponse,req.user?.userId,barcode);
                   return success(res, ai_reponse, "Analysis completed successfully. data fetched from database");
                }
@@ -97,6 +120,7 @@ export class FoodAnalysisContoller {
             }
 
             const analysisId = outputData.analysisId || uuidv4();
+            outputData.productImage = barcode_details.image_url ?? null;
             await FoodAnalysisContoller.createScanAnalysis(analysisId,outputData,req.user?.userId,barcode);
             // Save analysis in DB
             await BarcodeService.updateAIResponse(barcode,outputData);
@@ -114,8 +138,7 @@ export class FoodAnalysisContoller {
 
      static async createScanAnalysis(analysisId,outputData,userId,barcode){
 
-        await prisma.scanAnalysis.create({
-            data: {
+        var data = {
                 analysis_id: analysisId,
                 user_id: userId,
                 barcode:barcode,
@@ -130,7 +153,10 @@ export class FoodAnalysisContoller {
                 recommendations: outputData.recommendations,
                 allergens: outputData.allergens,
                 created_at: new Date(Date.now())
-            }
+            };
+
+        await prisma.scanAnalysis.create({
+            data:data
         });
     }
 
@@ -180,6 +206,8 @@ export class FoodAnalysisContoller {
         }
 
     }
+
+
 
 
 }

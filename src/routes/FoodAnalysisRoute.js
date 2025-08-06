@@ -6,5 +6,6 @@ import { FoodAnalysisContoller } from '../controllers/FoodAnalysisController.js'
 const router = express.Router();
 
 router.post('/barcode', authMiddleware, FoodAnalysisContoller.barcodeAnalysis);
+router.post('/barcode/info', authMiddleware, FoodAnalysisContoller.barcodeInfo);
 
 export default router;

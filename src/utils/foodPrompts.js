@@ -143,6 +143,7 @@ export function buildMainAnalysisPrompt({ productName, analysisType }) {
   - Use current scientific consensus, not outdated information
   - Include confidence scores to indicate certainty level
   - Estimate percentages based on ingredient order when not explicitly stated
+
   `;
 }
 
@@ -271,6 +272,8 @@ export function buildBarcodeAnalysisPrompt({ product, analysisType }) {
   - "insufficient_data": Not enough information for complete analysis
 
   **Important Guidelines:**
+  -If the Ingredients List field is empty or missing from Product Information:
+     Use ${product.name} to look up the ingredients via a trusted source
   - Be conservative in safety assessments - when in doubt, classify as "caution"
   - For pet food analysis, be especially strict about known pet toxins
   - Consider cumulative effects of multiple questionable ingredients
