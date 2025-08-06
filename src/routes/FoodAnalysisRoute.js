@@ -7,5 +7,6 @@ const router = express.Router();
 
 router.post('/barcode', authMiddleware, FoodAnalysisContoller.barcodeAnalysis);
 router.post('/barcode/info', authMiddleware, FoodAnalysisContoller.barcodeInfo);
+router.get('/history', authMiddleware, FoodAnalysisContoller.getAnalysisHistory);
 
 export default router;

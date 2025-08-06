@@ -12,10 +12,10 @@ const prisma = new PrismaClient();
 export class FoodAnalysisContoller {
 
     static async barcodeInfo(req, res) {
-         const { barcode } = req.body;
-         if (!barcode) {
-             return error(res, "Enter valid barcode.", 422);
-         }
+        const { barcode } = req.body;
+        if (!barcode) {
+            return error(res, "Enter valid barcode.", 422);
+        }
         const barcodeInfo = await BarcodeService.fetchdetails(barcode);
         const barcode_details = barcodeInfo.data || false;
         if (!barcode_details) {
@@ -23,7 +23,7 @@ export class FoodAnalysisContoller {
         }
 
         const product = {
-            'barcode':barcode,
+            'barcode': barcode,
             'name': barcode_details.name,
             'brand': barcode_details.brand,
             'image_url': barcode_details.image_url,
@@ -50,7 +50,7 @@ export class FoodAnalysisContoller {
                 barcode: barcode
             };
 
-             //Add Request to History
+            //Add Request to History
             await FoodAnalysisContoller.updateScanHistory(data);
 
             const barcodeInfo = await BarcodeService.fetchdetails(barcode);
@@ -61,21 +61,21 @@ export class FoodAnalysisContoller {
             }
 
             var ai_reponse = barcode_details.ai_reponse ?? false;
-            if(ai_reponse){
+            if (ai_reponse) {
                 ai_reponse = JSON.parse(ai_reponse);
-               if (ai_reponse.success != false) {
-                  ai_reponse.analysisId = crypto.randomUUID();
-                  ai_reponse.productImage = barcode_details.image_url ?? null;
-                  await FoodAnalysisContoller.createScanAnalysis(ai_reponse.analysisId,ai_reponse,req.user?.userId,barcode);
-                  return success(res, ai_reponse, "Analysis completed successfully. data fetched from database");
-               }
+                if (ai_reponse.success != false) {
+                    ai_reponse.analysisId = crypto.randomUUID();
+                    ai_reponse.productImage = barcode_details.image_url ?? null;
+                    await FoodAnalysisContoller.createScanAnalysis(ai_reponse.analysisId, ai_reponse, req.user?.userId, barcode);
+                    return success(res, ai_reponse, "Analysis completed successfully. data fetched from database");
+                }
             }
 
             const product = {
                 'name': barcode_details.name,
                 'brand': barcode_details.brand,
                 'ingredients': barcode_details.ingredients,
-                'nutrition':barcode_details.nutrition
+                'nutrition': barcode_details.nutrition
             }
 
             const mainPrompt = buildBarcodeAnalysisPrompt({
@@ -121,9 +121,9 @@ export class FoodAnalysisContoller {
 
             const analysisId = outputData.analysisId || uuidv4();
             outputData.productImage = barcode_details.image_url ?? null;
-            await FoodAnalysisContoller.createScanAnalysis(analysisId,outputData,req.user?.userId,barcode);
+            await FoodAnalysisContoller.createScanAnalysis(analysisId, outputData, req.user?.userId, barcode);
             // Save analysis in DB
-            await BarcodeService.updateAIResponse(barcode,outputData);
+            await BarcodeService.updateAIResponse(barcode, outputData);
             return success(res, outputData, "Analysis completed successfully");
 
         } catch (e) {
@@ -136,28 +136,45 @@ export class FoodAnalysisContoller {
         }
     }
 
-     static async createScanAnalysis(analysisId,outputData,userId,barcode){
+    static async createScanAnalysis(analysisId, outputData, userId, barcode) {
 
         var data = {
-                analysis_id: analysisId,
-                user_id: userId,
-                barcode:barcode,
-                image_url:null,
-                product_name: outputData.productName,
-                analysis_type: outputData.analysisType,
-                overall_status: outputData.overallStatus,
-                confidence: outputData.confidence,
-                processing_time: outputData.processingTime || null,
-                ingredients: outputData.ingredients,
-                summary: outputData.summary,
-                recommendations: outputData.recommendations,
-                allergens: outputData.allergens,
-                created_at: new Date(Date.now())
-            };
+            analysis_id: analysisId,
+            user_id: userId,
+            barcode: barcode,
+            image_url: null,
+            product_name: outputData.productName,
+            analysis_type: outputData.analysisType,
+            overall_status: outputData.overallStatus,
+            confidence: outputData.confidence,
+            processing_time: outputData.processingTime || null,
+            ingredients: outputData.ingredients,
+            summary: outputData.summary,
+            recommendations: outputData.recommendations,
+            allergens: outputData.allergens,
+            created_at: new Date(Date.now())
+        };
 
-        await prisma.scanAnalysis.create({
-            data:data
+
+        const existing = await prisma.scanAnalysis.findFirst({
+            where: {
+                barcode: barcode,
+                user_id: userId,
+            }
         });
+
+
+        if (existing) {
+            await prisma.scanAnalysis.update({
+                where: { id: existing.id }, // or another unique field
+                data: data,
+            });
+        } else {
+            await prisma.scanAnalysis.create({
+                data: data,
+            });
+        }
+
     }
 
     static async updateScanHistory(data) {
@@ -178,7 +195,7 @@ export class FoodAnalysisContoller {
 
     static async cleanReponse(result) {
         let cleanedResponse = '';
-        console.log(result,"resultss");
+        console.log(result, "resultss");
         try {
             const match = result.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
             const jsonStr = match ? match[1] : result;
@@ -207,7 +224,92 @@ export class FoodAnalysisContoller {
 
     }
 
+    /** User Analysis History */
+    static async getAnalysisHistory(req, res) {
+        try {
+            const userId = req.user.userId;
+            const {
+                page = 1,
+                limit = 20,
+                analysisType = 'all',
+                status = 'all'
+            } = req.query;
 
+            const skip = (parseInt(page) - 1) * parseInt(limit);
+            const take = Math.min(parseInt(limit), 100);
+
+            const whereClause = {
+                user_id: userId,
+                ...(analysisType !== 'all' && { analysis_type: analysisType }),
+                ...(status !== 'all' && { overall_status: status })
+            };
+
+            /** Get counts by Status */
+            const groupedStatusCounts = await prisma.scanAnalysis.groupBy({
+                by: ['overall_status'],
+                where: {
+                    user_id: userId
+                },
+                _count: {
+                    _all: true
+                }
+            });
+            var formattedcount = {};
+            if (groupedStatusCounts) {
+                formattedcount = groupedStatusCounts.reduce((acc, curr) => {
+                    acc[curr.overall_status] = curr._count._all;
+                    return acc;
+                }, {});
+            }
+
+
+
+            const [totalItems, analyses] = await Promise.all([
+                prisma.scanAnalysis.count({ where: whereClause }),
+                prisma.scanAnalysis.findMany({
+                    where: whereClause,
+                    orderBy: { created_at: 'desc' },
+                    skip,
+                    take,
+                    select: {
+                        analysis_id: true,
+                        product_name: true,
+                        analysis_type: true,
+                        overall_status: true,
+                        confidence: true,
+                        summary: true,
+                        image_url: true,
+                        created_at: true
+                    }
+                })
+            ]);
+
+            formattedcount.total = totalItems ?? 0;
+
+            return success(res, {
+                statistics: formattedcount,
+                analysis_list: analyses.map(item => ({
+                    id: item.analysis_id,
+                    productName: item.product_name,
+                    analysisType: item.analysis_type,
+                    overallStatus: item.overall_status,
+                    confidence: item.confidence,
+                    summary: item.summary,
+                    createdAt: item.created_at,
+                    barcode: item.barcode
+                })),
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(totalItems / take),
+                    totalItems,
+                    hasNext: skip + take < totalItems,
+                    hasPrev: skip > 0
+                }
+            });
+        } catch (e) {
+            return error(res, 'Failed to fetch analysis history', 500, [{ details: e.message }]);
+        }
+    }
 
 
 }

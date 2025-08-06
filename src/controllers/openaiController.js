@@ -177,6 +177,26 @@ export async function getAnalysisHistory(req, res) {
       ...(status !== 'all' && { overall_status: status })
     };
 
+    /** Get counts by Status */
+    const groupedStatusCounts = await prisma.scanAnalysis.groupBy({
+      by: ['overall_status'],
+      where: {
+        user_id: userId
+      },
+      _count: {
+        _all: true
+      }
+    });
+    var formattedcount = {};
+    if (groupedStatusCounts) {
+       formattedcount = groupedStatusCounts.reduce((acc, curr) => {
+        acc[curr.overall_status] = curr._count._all;
+        return acc;
+      }, {});
+    }
+
+
+
     const [totalItems, analyses] = await Promise.all([
       prisma.scanAnalysis.count({ where: whereClause }),
       prisma.scanAnalysis.findMany({
@@ -197,7 +217,10 @@ export async function getAnalysisHistory(req, res) {
       })
     ]);
 
+    formattedcount.total = totalItems ?? 0;
+
     return success(res, {
+      statistics :formattedcount,
       analyses: analyses.map(item => ({
         id: item.analysis_id,
         productName: item.product_name,
