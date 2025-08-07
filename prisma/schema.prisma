@@ -145,7 +145,8 @@ model SystemSetting {
 model BarcodeDetails {
   id                   Int       @id @default(autoincrement())
   barcode              String    @unique
-  productName          String?
+  product_name          String?
+  product_type          String?
   brand                String?
   image_url            String?
   ingredients          String?   @db.Text
@@ -153,5 +154,8 @@ model BarcodeDetails {
   aiResponse           Json?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+
+  @@map("barcode_details")
+
 }
 

@@ -13,6 +13,7 @@ export class FoodAnalysisContoller {
 
     static async barcodeInfo(req, res) {
         const { barcode } = req.body;
+        console.log(barcode);
         if (!barcode) {
             return error(res, "Enter valid barcode.", 422);
         }
@@ -26,6 +27,7 @@ export class FoodAnalysisContoller {
             'barcode': barcode,
             'name': barcode_details.name,
             'brand': barcode_details.brand,
+            'product_type':barcode_details.product_type,
             'image_url': barcode_details.image_url,
         }
         return success(res, product, "Barcode Information");

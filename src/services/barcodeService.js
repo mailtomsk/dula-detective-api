@@ -15,9 +15,10 @@ export class BarcodeService {
           if (check_db) {
                const result = {
                     barcode: barcode,
-                    name: check_db.productName || 'N/A',
+                    name: check_db.product_name || 'N/A',
                     brand: check_db.brand || 'N/A',
                     ingredients: check_db.ingredients || 'N/A',
+                    product_type: check_db.product_type ?? null,
                     image_url: check_db.image_url || null,
                     nutrition: check_db.nutrition || null,
                     ai_reponse: check_db.aiResponse || null
@@ -58,15 +59,17 @@ export class BarcodeService {
           return await prisma.barcodeDetails.upsert({
                where: { barcode: barcode },
                update: {
-                    'productName': data.name,
+                    'product_name': data.name,
                     'brand': data.brand,
                     'image_url': data.image_url,
+                    'product_type': data.product_type,
                     'ingredients': data.ingredients,
                     'nutrition': data.nutrition,
                },
                create: {
                     'barcode': barcode,
-                    'productName': data.name,
+                    'product_name': data.name,
+                    'product_type': data.product_type,
                     'brand': data.brand,
                     'image_url': data.image_url,
                     'ingredients': data.ingredients,
@@ -100,9 +103,8 @@ export class BarcodeService {
       */
      static async openfoodfact(barcode) {
 
-          const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+          const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}?product_type=all`);
           const data = await response.json();
-
           if (data.status === 0) {
                return {
                     "success": false,
@@ -110,11 +112,7 @@ export class BarcodeService {
                     "data": null
                };
           }
-
           const product = data.product || false;
-
-
-
           if (!product) {
                return {
                     "success": false,
@@ -127,6 +125,7 @@ export class BarcodeService {
                barcode: barcode,
                name: product.product_name || 'N/A',
                brand: product.brands || 'N/A',
+               product_type:product.product_type || null,
                ingredients: product.ingredients_text || 'N/A',
                image_url: product.image_url || null,
                nutrition: await this.readableNutrition(product.nutriments) || null,
@@ -139,7 +138,6 @@ export class BarcodeService {
           };
 
      }
-
 
      static async readableNutrition(obj) {
           return Object.entries(obj)
@@ -163,9 +161,11 @@ export class BarcodeService {
           const apiKey = process.env.BARCODELOOKUP_API_KEY;
           if (apiKey) {
                const url = `https://api.barcodelookup.com/v3/products?barcode=${barcode}&formatted=y&key=${apiKey}`;
+               console.log(url)
                try {
                     const response = await fetch(url);
                     const data = await response.json();
+                    console.log(data,"barcodeLookUp");
                     const product = data.products[0] ?? false;
                     if(product){
                          const result = {
