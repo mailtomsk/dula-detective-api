@@ -9,95 +9,91 @@ const prisma = new PrismaClient();
 
 export class UserProfileController {
 
-     static async getProfile(req, res) {
-      try {
+    static async getProfile(req, res) {
+        try {
 
-        const user = await prisma.user.findUnique({
-          where: { id: req.user.userId },
-        });
+            const user = await prisma.user.findUnique({
+                where: { id: req.user.userId },
+            });
 
-        if (!user) {
-          return error(res, "User not found", 404);
+            if (!user) {
+                return error(res, "User not found", 404);
+            }
+
+            const mockStats = {
+                totalScans: 47,
+                savedAnalyses: 12,
+                sharedAnalyses: 8,
+                averageAccuracy: 98.5,
+            };
+
+            const preferences = user.preferences || {
+                notifications: true,
+                darkMode: false,
+                defaultAnalysisType: 'human'
+            };
+
+            return success(res, {
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    profileImage: getFullImageUrl(user.profile_image, 'avatar') || null,
+                    membershipType: user.plan || 'free',
+                    createdAt: user.createdAt,
+                    stats: mockStats,
+                    preferences: preferences
+                }
+            });
+        } catch (e) {
+            return error(res, "Failed to retrieve profile", 500, [{ details: e.message }]);
         }
-
-        const mockStats = {
-            totalScans: 47,
-            savedAnalyses: 12,
-            sharedAnalyses: 8,
-            averageAccuracy: 98.5,
-        };
-
-        const preferences = user.preferences || {
-            notifications: true,
-            darkMode: false,
-            defaultAnalysisType: 'human'
-        };
-
-        return success(res, {
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            profileImage: getFullImageUrl(user.profile_image, 'avatar') || null,
-            membershipType: user.plan || 'free',
-            createdAt: user.createdAt,
-            stats: mockStats,
-            preferences: preferences
-          }
-        });
-      } catch (e) {
-        return error(res, "Failed to retrieve profile", 500, [{ details: e.message }]);
-      }
     }
 
-    static async  updateProfile(req, res) {
+    static async updateProfile(req, res) {
 
-      const { name, preferences } = req.body;
-      const preferenceData = preferences
-        ? {
-            ...(preferences.notifications !== undefined && { notifications: preferences.notifications }),
-            ...(preferences.darkMode !== undefined && { dark_mode: preferences.darkMode }),
-            ...(preferences.defaultAnalysisType && { default_analysis_type: preferences.defaultAnalysisType })
-          }
-        : {};
+        const { name, preferences } = req.body;
+        const preferenceData = preferences
+            ? {
+                ...(preferences.notifications !== undefined && { notifications: preferences.notifications }),
+                ...(preferences.darkMode !== undefined && { dark_mode: preferences.darkMode }),
+                ...(preferences.defaultAnalysisType && { default_analysis_type: preferences.defaultAnalysisType })
+            }
+            : {};
 
 
-      try {
-        const updatedUser = await prisma.user.update({
-          where: { id: req.user.userId },
-          data: {
-            ...(name && { name }),
-            ...preferenceData
-          }
-        });
+        try {
+            const updatedUser = await prisma.user.update({
+                where: { id: req.user.userId },
+                data: {
+                    ...(name && { name }),
+                    ...preferenceData
+                }
+            });
 
-        const mockStats = {
-            totalScans: 47,
-            savedAnalyses: 12,
-            sharedAnalyses: 8,
-            averageAccuracy: 98.5,
-        };
+            const mockStats = {
+                totalScans: 47,
+                savedAnalyses: 12,
+                sharedAnalyses: 8,
+                averageAccuracy: 98.5,
+            };
+            return success(res, {
+                user: {
+                    id: updatedUser.id,
+                    name: updatedUser.name,
+                    email: updatedUser.email,
+                    profileImage: getFullImageUrl(updatedUser.profile_image, 'avatar') || null,
+                    membershipType: updatedUser.plan || 'free',
+                    createdAt: updatedUser.created_at,
+                    stats: mockStats,
+                    preferences: preferences
+                }
+            }, "Profile updated successfully");
 
-        return success(res, {
-          user: {
-            id: updatedUser.id,
-            name: updatedUser.name,
-            email: updatedUser.email,
-            profileImage: getFullImageUrl(updatedUser.profile_image, 'avatar'),
-            membershipType: updatedUser.plan || 'free',
-            createdAt: updatedUser.created_at,
-            stats: mockStats,
-            preferences: {
-                notifications: updatedUser.notifications,
-                darkMode: updatedUser.dark_mode,
-                defaultAnalysisType: updatedUser.default_analysis_type
-              }
 
-          }
-        }, "Profile updated successfully");
-      } catch (e) {
-        return error(res, "Failed to update profile", 500, [{ details: e.message }]);
-      }
+        } catch (e) {
+            return error(res, "Failed to update profile", 500, [{ details: e.message }]);
+        }
 
     }
 
@@ -117,19 +113,44 @@ export class UserProfileController {
 
             // Ensure uploads directory exists
             if (!fs.existsSync(uploadDir)) {
-              fs.mkdirSync(uploadDir, { recursive: true });
+                fs.mkdirSync(uploadDir, { recursive: true });
             }
 
             // Save the file to disk
             fs.writeFileSync(filePath, req.file.buffer);
 
             // Update the user in DB
-            await prisma.user.update({
-              where: { id: req.user.userId },
-              data: { profile_image: filename }
+            const updatedUser = await prisma.user.update({
+                where: { id: req.user.userId },
+                data: { profile_image: filename }
             });
 
-            return success(res, { imageUrl }, "Profile image updated successfully");
+            const mockStats = {
+                totalScans: 47,
+                savedAnalyses: 12,
+                sharedAnalyses: 8,
+                averageAccuracy: 98.5,
+            };
+
+            const preferences = updatedUser.preferences || {
+                notifications: true,
+                darkMode: false,
+                defaultAnalysisType: 'human'
+            };
+
+            return success(res, {
+                user: {
+                    id: updatedUser.id,
+                    name: updatedUser.name,
+                    email: updatedUser.email,
+                    profileImage: getFullImageUrl(updatedUser.profile_image, 'avatar') || null,
+                    membershipType: updatedUser.plan || 'free',
+                    createdAt: updatedUser.created_at,
+                    stats: mockStats,
+                    preferences: preferences
+                }
+            }, "Profile image updated successfully");
+
 
         } catch (e) {
             return error(res, "Failed to upload image", 500, [{ details: e.message }]);
