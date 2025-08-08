@@ -12,8 +12,7 @@ const prisma = new PrismaClient();
 export class FoodAnalysisContoller {
 
     static async barcodeInfo(req, res) {
-        const { barcode } = req.body;
-        console.log(barcode);
+        const { barcode } = req.body;        
         if (!barcode) {
             return error(res, "Enter valid barcode.", 422);
         }
