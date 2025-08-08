@@ -49,7 +49,8 @@ export class FoodAnalysisContoller {
             const data = {
                 user_id: req.user?.userId || null,
                 analysis_type: analysisType,
-                barcode: barcode
+                barcode: barcode,
+                image_path: null
             };
 
             //Add Request to History

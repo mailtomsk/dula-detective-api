@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { getFullImageUrl } from '../utils/helpers.js';
 import { success, error } from '../utils/apiResponse.js';
 import { validateImageUpload } from '../validators/profiileImageValidation.js';
+import { formatUserProfileResponse } from '../utils/userFormatResponse.js';
 
 const prisma = new PrismaClient();
 
@@ -20,31 +21,9 @@ export class UserProfileController {
                 return error(res, "User not found", 404);
             }
 
-            const mockStats = {
-                totalScans: 47,
-                savedAnalyses: 12,
-                sharedAnalyses: 8,
-                averageAccuracy: 98.5,
-            };
+            const data = await formatUserProfileResponse(user);
+            return success(res, data);
 
-            const preferences = user.preferences || {
-                notifications: true,
-                darkMode: false,
-                defaultAnalysisType: 'human'
-            };
-
-            return success(res, {
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    profileImage: getFullImageUrl(user.profile_image, 'avatar') || null,
-                    membershipType: user.plan || 'free',
-                    createdAt: user.createdAt,
-                    stats: mockStats,
-                    preferences: preferences
-                }
-            });
         } catch (e) {
             return error(res, "Failed to retrieve profile", 500, [{ details: e.message }]);
         }
@@ -71,26 +50,8 @@ export class UserProfileController {
                 }
             });
 
-            const mockStats = {
-                totalScans: 47,
-                savedAnalyses: 12,
-                sharedAnalyses: 8,
-                averageAccuracy: 98.5,
-            };
-            return success(res, {
-                user: {
-                    id: updatedUser.id,
-                    name: updatedUser.name,
-                    email: updatedUser.email,
-                    profileImage: getFullImageUrl(updatedUser.profile_image, 'avatar') || null,
-                    membershipType: updatedUser.plan || 'free',
-                    createdAt: updatedUser.created_at,
-                    stats: mockStats,
-                    preferences: preferences
-                }
-            }, "Profile updated successfully");
-
-
+            const data = await formatUserProfileResponse(updatedUser);
+            return success(res, data);
         } catch (e) {
             return error(res, "Failed to update profile", 500, [{ details: e.message }]);
         }
@@ -125,32 +86,8 @@ export class UserProfileController {
                 data: { profile_image: filename }
             });
 
-            const mockStats = {
-                totalScans: 47,
-                savedAnalyses: 12,
-                sharedAnalyses: 8,
-                averageAccuracy: 98.5,
-            };
-
-            const preferences = updatedUser.preferences || {
-                notifications: true,
-                darkMode: false,
-                defaultAnalysisType: 'human'
-            };
-
-            return success(res, {
-                user: {
-                    id: updatedUser.id,
-                    name: updatedUser.name,
-                    email: updatedUser.email,
-                    profileImage: getFullImageUrl(updatedUser.profile_image, 'avatar') || null,
-                    membershipType: updatedUser.plan || 'free',
-                    createdAt: updatedUser.created_at,
-                    stats: mockStats,
-                    preferences: preferences
-                }
-            }, "Profile image updated successfully");
-
+            const data = await formatUserProfileResponse(updatedUser);
+            return success(res, data);
 
         } catch (e) {
             return error(res, "Failed to upload image", 500, [{ details: e.message }]);
