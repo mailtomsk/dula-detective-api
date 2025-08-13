@@ -34,6 +34,7 @@ model PasswordResetToken {
   user          User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
   user_id       Int        @unique
   token         String
+  is_verified   Boolean   @default(false)
   expires_at    DateTime
   created_at    DateTime   @default(now())
   updated_at    DateTime?  @updatedAt

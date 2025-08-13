@@ -152,13 +152,43 @@ export async function forgotPassword(req, res) {
   return success(res, null, "Password reset link sent to email");
 }
 
-// Reset Password 
-export async function resetPassword(req, res) {
-  const { email, otp, newPassword, confirmPassword } = req.body;
+//OTP verification
+export async function verifyOtp(req, res) {
+  const { email, otp } = req.body;
 
   const errors = [];
   if (!email) errors.push({ field: "email", message: "Email is required" });
   if (!otp) errors.push({ field: "otp", message: "OTP is required" });
+
+  if (errors.length > 0) {
+    return error(res, "Validation failed", 400, errors);
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return error(res, "User not found", 404);
+
+  const record = await prisma.passwordResetToken.findUnique({ where: { user_id: user.id } });
+
+  if (!record || record.token !== otp || record.expires_at < new Date()) {
+    return error(res, "Invalid or expired OTP", 400);
+  }
+
+  // Mark OTP as verified
+  await prisma.passwordResetToken.update({
+    where: { user_id: user.id },
+    data: { is_verified: true },
+  });
+
+  return success(res, null, "OTP verified successfully");
+}
+
+
+// Reset Password 
+export async function resetPassword(req, res) {
+  const { email, newPassword, confirmPassword } = req.body;
+
+  const errors = [];
+  if (!email) errors.push({ field: "email", message: "Email is required" });
   if (!newPassword) errors.push({ field: "password", message: "Password is required" });
   if (!confirmPassword) errors.push({ field: "confirmPassword", message: "Confirm password is required" });
   if (newPassword !== confirmPassword) errors.push({ field: "confirmPassword", message: "Passwords do not match" });
@@ -174,8 +204,8 @@ export async function resetPassword(req, res) {
 
   const record = await prisma.passwordResetToken.findUnique({ where: { user_id: user.id } });
 
-  if (!record || record.token !== otp || record.expires_at < new Date()) {
-    return error(res, "Invalid or expired OTP", 400);
+  if (!record || !record.is_verified) {
+    return error(res, "OTP not verified", 400);
   }
 
   const hashed = await bcrypt.hash(newPassword, 10);
