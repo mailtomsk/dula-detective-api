@@ -26,7 +26,7 @@ export class FoodAnalysisContoller {
             'barcode': barcode,
             'name': barcode_details.name,
             'brand': barcode_details.brand,
-            'product_type':barcode_details.product_type,
+            'product_type': barcode_details.product_type,
             'image_url': barcode_details.image_url,
         }
         return success(res, product, "Barcode Information");
@@ -45,14 +45,7 @@ export class FoodAnalysisContoller {
                 return error(res, "Valid 'analysisType' is required. It must be either 'human' or 'pet'.", 422);
             }
 
-            const data = {
-                user_id: req.user?.userId || null,
-                analysis_type: analysisType,
-                barcode: barcode
-            };
 
-            //Add Request to History
-            await FoodAnalysisContoller.updateScanHistory(data);
 
             const barcodeInfo = await BarcodeService.fetchdetails(barcode);
 
@@ -60,6 +53,16 @@ export class FoodAnalysisContoller {
             if (!barcode_details) {
                 return error(res, "Barcode is not valid or no data found for the barcode", 422);
             }
+
+            //Add Request to History
+            const data = {
+                user_id: req.user?.userId || null,
+                analysis_type: analysisType,
+                barcode: barcode,
+                image_path: barcode_details.image_url ?? nul
+            };
+
+            await FoodAnalysisContoller.updateScanHistory(data);
 
             var ai_reponse = barcode_details.ai_reponse ?? false;
             if (ai_reponse) {
@@ -153,7 +156,8 @@ export class FoodAnalysisContoller {
             summary: outputData.summary,
             recommendations: outputData.recommendations,
             allergens: outputData.allergens,
-            created_at: new Date(Date.now())
+            created_at: new Date(Date.now()),
+            image_url: outputData.productImage ?? null,
         };
 
 
@@ -273,6 +277,7 @@ export class FoodAnalysisContoller {
                     skip,
                     take,
                     select: {
+                        id: true,
                         analysis_id: true,
                         product_name: true,
                         analysis_type: true,
@@ -291,6 +296,7 @@ export class FoodAnalysisContoller {
                 statistics: formattedcount,
                 analysis_list: analyses.map(item => ({
                     id: item.analysis_id,
+                    analysis_id: item.id,
                     productName: item.product_name,
                     analysisType: item.analysis_type,
                     overallStatus: item.overall_status,
@@ -309,6 +315,68 @@ export class FoodAnalysisContoller {
             });
         } catch (e) {
             return error(res, 'Failed to fetch analysis history', 500, [{ details: e.message }]);
+        }
+    }
+
+    /** Analysis DetailsBy Id */
+    static async getAnalysisDetails(req, res) {
+        try {
+
+            const userId = req.user.userId;
+            const analysisId = parseInt(req.params.id);
+            const analysis = await prisma.scanAnalysis.findUnique({
+                where: {
+                    id: analysisId,
+                    user_id: userId
+                }
+            });
+
+            if (!analysis) {
+                return error(res, 'Analysis not found', 404);
+            }
+
+            return success(res, {
+                analysisId: analysis.analysis_id,
+                analysisType: analysis.analysis_type,
+                overallStatus: analysis.overall_status,
+                confidence: analysis.confidence,
+                processingTime: analysis.processing_time,
+                ingredients: analysis.ingredients,
+                summary: analysis.summary,
+                recommendations: analysis.recommendations,
+                allergens: analysis.allergens,
+                productImage: analysis.image_url,
+                createdAt: analysis.created_at
+            });
+        } catch (e) {
+            return error(res, 'Failed to fetch analysis details', 500, [{ details: e.message }]);
+        }
+    }
+
+    /** Delete Analysis  */
+    static async deleteAnalysis(req, res) {
+        try {
+            const userId = req.user.userId;
+            const analysisId = parseInt(req.params.id);
+
+            const existing = await prisma.scanAnalysis.findUnique({
+                where: {
+                    id: analysisId,
+                    user_id: userId
+                }
+            });
+
+            if (!existing) {
+                return error(res, 'Analysis not found', 404);
+            }
+
+            await prisma.scanAnalysis.delete({
+                where: { id: analysisId }
+            });
+
+            return success(res, null, 'Analysis deleted successfully');
+        } catch (e) {
+            return error(res, 'Failed to delete analysis', 500, [{ details: e.message }]);
         }
     }
 
