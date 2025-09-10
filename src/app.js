@@ -12,6 +12,7 @@ import adminUserRoute from './routes/admin/adminUserRoute.js';
 import notificationRoute from './routes/notificationRoute.js';
 import adminSettingsRoute from './routes/admin/adminSettingsRoute.js';
 import adminDashboardRoute from './routes/admin/adminDashboardRoute.js';
+import adminPlanRoute from  './routes/admin/AdminPlanRoute.js';
 import FoodAnalysisRoute from './routes/FoodAnalysisRoute.js';
 
 dotenv.config();
@@ -19,7 +20,7 @@ dotenv.config();
 const app = express();
 
 const corsOptions = {
-    origin: ['http://localhost:5000', 'http://localhost:5173', 'https://duladetective.yourhostingnow.com'],
+    origin: ['http://localhost:5000', 'http://localhost:5174', 'https://duladetective.yourhostingnow.com','http://whmcs.upc.org:5174'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'x-api-key'],
     credentials: true,
@@ -43,6 +44,7 @@ app.use('/api/food-analysis', FoodAnalysisRoute);
 //Frontend admin
 app.use('/api/admin/auth', adminAuthRoute);
 app.use('/api/admin/users', adminUserRoute);
+app.use('/api/admin/plans', adminPlanRoute);
 app.use('/api/admin/dashboard', adminDashboardRoute);
 app.use('/api/admin/settings', adminSettingsRoute);
 

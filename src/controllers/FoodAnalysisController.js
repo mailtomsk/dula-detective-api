@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 export class FoodAnalysisContoller {
 
     static async barcodeInfo(req, res) {
-        const { barcode } = req.body;        
+        const { barcode } = req.body;
         if (!barcode) {
             return error(res, "Enter valid barcode.", 422);
         }
@@ -296,7 +296,7 @@ export class FoodAnalysisContoller {
                 statistics: formattedcount,
                 analysis_list: analyses.map(item => ({
                     id: item.analysis_id,
-                    analysis_id: item.id,
+                    analysisId: item.id,
                     productName: item.product_name,
                     analysisType: item.analysis_type,
                     overallStatus: item.overall_status,
@@ -336,7 +336,8 @@ export class FoodAnalysisContoller {
             }
 
             return success(res, {
-                analysisId: analysis.analysis_id,
+                id: analysis.analysis_id,
+                analysisId: analysis.id,
                 analysisType: analysis.analysis_type,
                 overallStatus: analysis.overall_status,
                 confidence: analysis.confidence,

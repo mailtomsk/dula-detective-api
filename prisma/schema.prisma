@@ -160,3 +160,20 @@ model BarcodeDetails {
 
 }
 
+model Plan {
+  id                   Int       @id @default(autoincrement())
+  name                 String
+  short_description    String?
+  slug                 String?   @unique
+  monthy_price         Decimal?  @default(0)
+  yearly_discount      Decimal?  @default(0)
+  scan_limit           Int?      @default(5)
+  features             String    @db.Text
+  status               Boolean?  @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@map("plans")
+
+}
+
