@@ -10,5 +10,6 @@ const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 } });
 router.get('/profile', authMiddleware, UserProfileController.getProfile);
 router.put('/profile', authMiddleware, UserProfileController.updateProfile);
 router.post('/profile/image', authMiddleware, upload.single('image'), UserProfileController.uploadProfileImage);
+router.delete('/profile', authMiddleware, UserProfileController.deleteProfile);
 
 export default router;

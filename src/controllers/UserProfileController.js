@@ -94,4 +94,20 @@ export class UserProfileController {
         }
     }
 
+    static async deleteProfile(req, res) {
+        try {
+            const deleteUser = await prisma.user.delete({
+                where: {
+                    id: req.user.userId,
+                },
+            });
+            if(deleteUser){
+                return success(res, [], 'Account Deleted Succesfully',204);
+            }
+            return error(res, [], 'Error in Deleting Account. Try again later',410);
+        } catch (e) {
+            return error(res, "Failed to Delete Profile", 500, [{ details: e.message }]);
+        }
+    }
+
 }

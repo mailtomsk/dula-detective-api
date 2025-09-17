@@ -31,7 +31,6 @@ export class FoodAnalysisContoller {
         }
         return success(res, product, "Barcode Information");
 
-
     }
 
     static async barcodeAnalysis(req, res) {
@@ -44,11 +43,7 @@ export class FoodAnalysisContoller {
             if (!analysisType || (analysisType !== 'human' && analysisType !== 'pet')) {
                 return error(res, "Valid 'analysisType' is required. It must be either 'human' or 'pet'.", 422);
             }
-
-
-
             const barcodeInfo = await BarcodeService.fetchdetails(barcode);
-
             const barcode_details = barcodeInfo.data || false;
             if (!barcode_details) {
                 return error(res, "Barcode is not valid or no data found for the barcode", 422);

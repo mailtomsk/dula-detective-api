@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { success,error } from '../../utils/apiResponse.js';
+import { success,error } from '../utils/apiResponse.js';
 
 const prisma = new PrismaClient();
 
@@ -17,9 +17,9 @@ export class PlanContoller {
             return error(res, "No Plans Found");
         }
         const plans = await prisma.plan.findMany({
-            orderBy: {
-                id: 'asc' // 'asc' for ascending, 'desc' for descending
-            }
+            where: {
+                 status: true,
+            },
         });
         const subscriptionPlans = plans.map(plan => {
             const monthlyprice = plan.monthy_price;
@@ -34,7 +34,8 @@ export class PlanContoller {
                     percentage_saved:plan.yearly_discount
                 },
                 scanLimit: plan.scan_limit,   // using the calculated value
-                features: plan.features ?? '',
+                features:  [...plan.features.matchAll(/<li[^>]*>(?:.|\n)*?<\/svg>(.*?)<\/li>/g)]
+  .map(match => match[1].trim()),
                 isActive: plan.status,
                 description: plan.short_description,
             };
@@ -42,30 +43,6 @@ export class PlanContoller {
         });
         return success(res, subscriptionPlans, "Plans Information");
     }
-
-    static async changeStatus(req, res) {
-
-        try {
-            const plan = await prisma.plan.findUnique({
-                where: { id: req.body.plan_id },
-            });
-            if(plan){
-                var plan_status   = !plan.status;
-                var updatestatus = await prisma.plan.update({
-                     where: { id: req.user.userId },
-                     data:{ status: plan_status}
-                });
-                if(updatestatus){
-                    return success(res, {'status':plan_status}, "Plan Status Changed Successfully");
-                }
-            }
-
-        } catch (e) {
-            return error(res, "Error in change in Plan status. Try again", 500, [{ details: e.message }]);
-        }
-    }
-
-
 
 
 }
