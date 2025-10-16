@@ -22,10 +22,14 @@ model User {
   last_Login             DateTime?
   created_at             DateTime  @default(now())
   updated_at             DateTime? @updatedAt
+  stripe_customer_id     String?
+  plan_id                Int?
 
   passwordResetToken PasswordResetToken?
   scanAnalyses   ScanAnalysis[]
   Notifications  Notification[]
+  subscriptions   UserSubscription[]
+
 
 }
 
@@ -173,7 +177,24 @@ model Plan {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
+  users           UserSubscription[]
   @@map("plans")
+
+}
+
+model UserSubscription {
+    id              Int      @id @default(autoincrement())
+    user_id         Int?
+    plan_id         Int?
+    amount          Decimal?
+    subscription_id String?
+    createdAt       DateTime  @default(now())
+    updatedAt       DateTime  @updatedAt
+
+    user       User?     @relation(fields: [user_id], references: [id], onDelete: SetNull)
+    plan       Plan?     @relation(fields: [plan_id], references: [id], onDelete: SetNull)
+
+    @@map("user_subscriptions")
 
 }
 
