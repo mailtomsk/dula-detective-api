@@ -125,14 +125,13 @@ export class StripController {
            const users = await prisma.user.findFirst({ where: { id:user.id } });
 
             return success(res, {
-            user: {
-                id: updatedUser.id,
-                name: updatedUser.name,
-                email: updatedUser.email,
-                emailVerified: updatedUser.emailVerified,
-                createdAt: updatedUser.created_at,
-                plan: updatedUser.plan,
-              },
+               user: {
+                    id: updatedUser.id,
+                    name: updatedUser.name,
+                    email: updatedUser.email,
+                    membershipType: updatedUser.plan || "free",
+                    createdAt: updatedUser.created_at,
+                }
            }, "Upgraded Successfully", 200);
 
 
